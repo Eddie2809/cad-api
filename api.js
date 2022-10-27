@@ -38,130 +38,108 @@ app.use(express.json())
 const port = 3000
 
 
-app.get('/obtener-usuarios',(req,res) => {
-    db.select('*').from('Usuarios').then(users => {
-        res.json(users)
-    })
-})
+app.post('/obtener-usuario',(req,res) => {
+    let {id,nombre,apellidos,fechaNacimiento,sexo} = req.body
 
-app.get('/obtener-librerias',(req,res) => {
-    db.select('*').from('Librerias').then(librerias => {
-        res.json(librerias)
+    db.raw("Exec SP_GetUsuario " + id + "," + nombre + "," + apellidos + "," + fechaNacimiento + "," + sexo).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.get('/obtener-libros',(req,res) => {
-    db.select('*').from('Libros').then(libros => {
-        res.json(libros)
+app.post('/obtener-librerias',(req,res) => {
+    let {id,codigo,descripcion} = req.body
+    db.raw("EXEC SP_GetLibrerias " + id + "," + codigo + "," + descripcion).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.get('/obtener-salidas',(req,res) => {
-    db.select('*').from('Salidas').then(salidas => {
-        res.json(salidas)
+app.post('/obtener-libros',(req,res) => {
+    let {id,titulo,autor,fechaPublicacion,editorial,etiquetas,tipoLibro} = req.body
+    db.raw("EXEC SP_GetLibros " + id + "," + titulo + "," + autor + "," + fechaPublicacion + "," + editorial + "," + etiquetas + "," + tipoLibro).then(sp => {
+        res.json(sp)
+    })
+    .catch(err => {
+        res.json(err)
+    })
+})
+
+app.post('/obtener-salidas',(req,res) => {
+    let {idSalida,fecha,idUsuario,idLibro,idLibreria} = req.body
+
+    db.raw("Exec SP_GetSalidas " + idSalida + "," + fecha + "," + idUsuario + "," + idLibro + "," + idLibreria).then(spRes => {
+        res.json(spRes)
+    })
+    .catch(err => {
+        res.json(err)
+    })
+})
+
+app.post('/obtener-tipos-de-libro',(req,res) => {
+    let {id,codigo,descripcion,formato,grupo} = req.body
+
+    db.raw("Exec SP_GetTipoLibro " + id + "," + codigo + "," + descripcion + "," + formato + "," + grupo).then(spRes => {
+        res.json(spRes)
+    })
+    .catch(err => {
+        res.json(err)
+    })
+})
+
+app.post('/set-usuario',(req,res) => {
+    let {id,nombre,apellidos,fechaNacimiento,sexo} = req.body
+
+    db.raw('EXEC SP_SetUsuario ' + id + "," + nombre + "," + apellidos + "," + fechaNacimiento + "," + sexo).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.get('/obtener-tipos-de-libro',(req,res) => {
-    db.select('*').from('TipoLibro').then(tipoLibro => {
-        res.json(tipoLibro)
+app.post('/set-libreria',(req,res) => {
+    let {id,codigo,descripcion} = req.body
+
+    db.raw('EXEC SP_SetLibreria ' + id + "," + codigo + "," + descripcion).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.post('/registrar-usuario',(req,res) => {
-    let {nombre,apellidos,fechaNacimiento,sexo} = req.body
+app.post('/set-libro',(req,res) => {
+    let {idLibro,titulo,autor,fechaPublicacion,editorial,etiquetas,idTipoLibro} = req.body
 
-    db('Usuarios').insert({
-        Nombre: nombre,
-        Apellidos: apellidos,
-        FechaNacimiento: fechaNacimiento,
-        Sexo: sexo
-    })
-    .then(resp => {
-        res.json('Usuario registrado con éxito')
+    db.raw('EXEC SP_SetLibro ' + idLibro + "," + titulo + "," + autor + "," + fechaPublicacion + "," + editorial + "," + etiquetas + "," + idTipoLibro).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.post('/registrar-libreria',(req,res) => {
+app.post('/set-salidas',(req,res) => {
+    let {idSalida,fecha,idUsuario,idLibro,idLibreria} = req.body
 
-    let {codigo,descripcion} = req.body
-
-    db('Librerias').insert({
-        Codigo: codigo,
-        Descripcion: descripcion
-    })
-    .then(resp => {
-        res.json('Libreria registrada con éxito')
+    db.raw('EXEC SP_SetSalidas ' + idSalida + "," + fecha + "," + idUsuario + "," + idLibro + "," + idLibreria).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
     })
 })
 
-app.post('/registrar-libro',(req,res) => {
+app.post('/set-tipo-libro',(req,res) => {
+    let {id,codigo,descripcion,formato,grupo} = req.body
 
-    let {titulo,autor,fechaPublicacion,editorial,etiquetas,tipoLibro} = req.body
-
-    db('Libros').insert({
-        Titulo: titulo,
-        Autor: autor,
-        Fecha_Publicacion: fechaPublicacion,
-        Editorial: editorial,
-        Etiquetas: etiquetas,
-        Fk_TipoLibro: tipoLibro
-    })
-    .then(resp => {
-        res.json('Libro registrado con éxito')
-    })
-    .catch(err => {
-        res.status(400).json(err)
-    })
-})
-
-app.post('/registrar-salida', (req,res) => {
-
-    let {fecha,usuario,libro,libreria} = req.body
-
-    db('Salidas').insert({
-        Fecha: fecha,
-        Fk_Usuario: usuario,
-        Fk_Libro: libro,
-        Fk_Libreria: libreria
-    })
-    .then(resp => {
-        res.json('Salida registrada con éxito')
-    })
-    .catch(err => {
-        res.status(400).json(err)
-    })
-})
-
-app.post('/registrar-tipo-de-libro', (req,res) => {
-    let {codigo, descripcion, formato, grupo} = req.body
-
-    db('TipoLibro').insert({
-        Codigo: codigo,
-        Descripcion: descripcion,
-        Formato: formato,
-        Grupo: grupo
-    })
-    .then(resp => {
-        res.json('Tipo de libro registrado con éxito')
+    db.raw('EXEC SP_TipoLibro ' + id + "," + codigo + "," + descripcion + "," + formato + "," + grupo).then(spRes => {
+        res.json(spRes)
     })
     .catch(err => {
         res.status(400).json(err)
